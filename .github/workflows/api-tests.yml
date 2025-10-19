@@ -2,7 +2,7 @@ name: API Tests
 
 on:
   push:
-    branches: [ main, master ]
+    branches: [ '**' ]
   pull_request:
     branches: [ main, master ]
   workflow_dispatch:
@@ -19,7 +19,6 @@ on:
         description: 'Test folder to run (leave empty for all)'
         required: false
         type: string
-
 jobs:
   api-tests:
     name: Run API Tests
@@ -55,11 +54,12 @@ jobs:
         working-directory: tests/postman
         run: |
 
-          docker compose up -d
+          #docker compose up -d
           # Wait for services to be ready
-          echo "Waiting for services to be ready..."
-          sleep 15
+          #echo "Waiting for services to be ready..."
+          #sleep 15
           # Build the Docker image
+          echo "Build the Docker test image"
           docker build -t cinemaabyss-api-tests .
           
           # Run the tests in Docker
