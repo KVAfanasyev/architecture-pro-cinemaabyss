@@ -1,11 +1,11 @@
-{{- if .Values.ingress.enabled -}}
+  {{- if .Values.ingress.enabled -}}
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: cinemaabyss-ingress
   namespace: {{ .Values.global.namespace }}
   labels:
-    app.kubernetes.io/name: {{ include "cinemaabyss.name" . }}
+    app.kubernetes.io/name: cinemaabyss
     app.kubernetes.io/instance: {{ .Release.Name }}
   {{- with .Values.ingress.annotations }}
   annotations:
@@ -17,7 +17,7 @@ spec:
   {{- end }}
   rules:
   {{- range .Values.ingress.hosts }}
-  - host: {{ .host }}
+  - host: {{ .host | quote }}
     http:
       paths:
       {{- range .paths }}
@@ -25,9 +25,9 @@ spec:
         pathType: {{ .pathType }}
         backend:
           service:
-            name: {{ .service }}
+            name: {{ .serviceName }}
             port:
-              number: {{ .port }}
+              number: {{ .servicePort }}
       {{- end }}
   {{- end }}
-{{- end }}
+  {{- end }}

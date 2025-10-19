@@ -3,9 +3,10 @@ global:
   namespace: cinemaabyss
   domain: cinemaabyss.example.com
 
-# Image pull secrets
+  # Image pull secrets
 imagePullSecrets:
-  dockerconfigjson: ewoJImF1dGhzIjogewoJCSJnaGNyLmlvIjogewoJCQkiYXV0aCI6
+  dockerconfigjson: ewogICJhdXRocyI6IHsKICAgICJnaGNyLmlvIjogewogICAgICAiYXV0aCI6ICJTMVpCWm1GdVlYTjVaWFk2WjJsMGFIVmlYM0JoZEY4eE1VSllXRnBIVTFrd1NtVjZkbEZFYjI1U1kzYzFYekJ1TjBSbFpIaFpTVkZYT1V0YU5FTjVhM1ZWWnpjMFVtZFNiRkJyTUhGVFFrRkxaWGRRYlU5VVNuWkVSMUZJVDFORVZrVlNSa1V3WVhFMCIKICAgIH0KICB9Cn0K
+
 # Database configuration
 database:
   host: postgres
@@ -15,15 +16,15 @@ database:
   password: cG9zdGdyZXNfcGFzc3dvcmQ=
   image:
     repository: postgres
-    tag: 14
+    tag: "14"
     pullPolicy: IfNotPresent
   resources:
     limits:
       cpu: 1000m
       memory: 1Gi
     requests:
-      cpu: 500m
-      memory: 512Mi
+      cpu: 100m
+      memory: 256Mi
   persistence:
     enabled: true
     size: 10Gi
@@ -33,7 +34,7 @@ database:
 monolith:
   enabled: true
   image:
-    repository: ghcr.io/db-exp/cinemaabysstest/monolith
+    repository: ghcr.io/kvafanasyev/architecture-pro-cinemaabyss/monolith
     tag: latest
     pullPolicy: Always
   replicas: 1
@@ -53,7 +54,7 @@ monolith:
 proxyService:
   enabled: true
   image:
-    repository: ghcr.io/db-exp/cinemaabysstest/proxy-service
+    repository: ghcr.io/kvafanasyev/architecture-pro-cinemaabyss/proxy-service
     tag: latest
     pullPolicy: Always
   replicas: 1
@@ -73,7 +74,7 @@ proxyService:
 moviesService:
   enabled: true
   image:
-    repository: ghcr.io/db-exp/cinemaabysstest/movies-service
+    repository: ghcr.io/kvafanasyev/architecture-pro-cinemaabyss/movies-service
     tag: latest
     pullPolicy: Always
   replicas: 1
@@ -93,14 +94,18 @@ moviesService:
 eventsService:
   enabled: true
   image:
-    repository: ghcr.io/db-exp/cinemaabysstest/events-service
+    repository: ghcr.io/kvafanasyev/architecture-pro-cinemaabyss/events-service
     tag: latest
     pullPolicy: Always
   replicas: 1
+  env:
+    KAFKA_CONSUMER_SESSION_TIMEOUT: "30000"
+    KAFKA_CONSUMER_HEARTBEAT_INTERVAL: "10000"
+    KAFKA_CONSUMER_MAX_POLL_INTERVAL: "300000"
   resources:
     limits:
-      cpu: 300m
-      memory: 256Mi
+      cpu: 500m
+      memory: 512Mi
     requests:
       cpu: 100m
       memory: 128Mi
@@ -117,6 +122,13 @@ kafka:
     tag: 2.13-2.7.0
     pullPolicy: IfNotPresent
   replicas: 1
+  env:
+    KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+    KAFKA_ADVERTISED_LISTENERS: INSIDE://kafka:9092
+    KAFKA_LISTENERS: INSIDE://0.0.0.0:9092
+    KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INSIDE:PLAINTEXT
+    KAFKA_INTER_BROKER_LISTENER_NAME: INSIDE
+    KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
   resources:
     limits:
       cpu: 1000m
@@ -126,16 +138,13 @@ kafka:
       memory: 512Mi
   persistence:
     enabled: true
-    size: 5Gi
+    size: 10Gi
     accessMode: ReadWriteOnce
   topics:
-    - name: movie-events
+    - name: "movie-events"
       partitions: 1
       replicationFactor: 1
-    - name: user-events
-      partitions: 1
-      replicationFactor: 1
-    - name: payment-events
+    - name: "booking-events"
       partitions: 1
       replicationFactor: 1
 
@@ -166,20 +175,38 @@ ingress:
   annotations:
     kubernetes.io/ingress.class: nginx
     nginx.ingress.kubernetes.io/ssl-redirect: "false"
+    nginx.ingress.kubernetes.io/use-regex: "true"
   hosts:
     - host: cinemaabyss.example.com
       paths:
+        - path: /health
+          pathType: Exact
+          serviceName: proxy-service
+          servicePort: 8000
+        - path: /api/movies/health
+          pathType: Exact
+          serviceName: movies-service
+          servicePort: 8081
+        - path: /api/events/
+          pathType: Prefix
+          serviceName: events-service
+          servicePort: 8082
         - path: /
           pathType: Prefix
-          service: proxy-service
-          port: 80
-        - path: /api/events
-          pathType: Prefix
-          service: events-service
-          port: 8082
+          serviceName: proxy-service
+          servicePort: 8000
 
 # Application configuration
 config:
   # Strangler Fig configuration
   gradualMigration: "true"
-  moviesMigrationPercent: "100"
+  moviesMigrationPercent: "50"
+
+  # Service endpoints configuration
+  services:
+    monolith:
+      url: "http://monolith-service:8080"
+    movies:
+      url: "http://movies-service:8081"
+    events:
+      url: "http://events-service:8082"
