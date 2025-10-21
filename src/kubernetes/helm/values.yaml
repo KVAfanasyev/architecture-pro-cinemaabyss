@@ -20,11 +20,11 @@ database:
     pullPolicy: IfNotPresent
   resources:
     limits:
-      cpu: 1000m
-      memory: 1Gi
+      cpu: 500m
+      memory: 512Mi
     requests:
       cpu: 100m
-      memory: 256Mi
+      memory: 128Mi
   persistence:
     enabled: true
     size: 10Gi
@@ -40,8 +40,8 @@ monolith:
   replicas: 1
   resources:
     limits:
-      cpu: 500m
-      memory: 512Mi
+      cpu: 250m
+      memory: 256Mi
     requests:
       cpu: 100m
       memory: 128Mi
@@ -60,7 +60,7 @@ proxyService:
   replicas: 1
   resources:
     limits:
-      cpu: 300m
+      cpu: 250m
       memory: 256Mi
     requests:
       cpu: 100m
@@ -80,7 +80,7 @@ moviesService:
   replicas: 1
   resources:
     limits:
-      cpu: 300m
+      cpu: 250m
       memory: 256Mi
     requests:
       cpu: 100m
@@ -104,8 +104,8 @@ eventsService:
     KAFKA_CONSUMER_MAX_POLL_INTERVAL: "300000"
   resources:
     limits:
-      cpu: 500m
-      memory: 512Mi
+      cpu: 250m
+      memory: 256Mi
     requests:
       cpu: 100m
       memory: 128Mi
@@ -131,11 +131,11 @@ kafka:
     KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
   resources:
     limits:
-      cpu: 1000m
-      memory: 1Gi
-    requests:
-      cpu: 200m
+      cpu: 512m
       memory: 512Mi
+    requests:
+      cpu: 100m
+      memory: 256Mi
   persistence:
     enabled: true
     size: 10Gi
@@ -147,7 +147,12 @@ kafka:
     - name: "booking-events"
       partitions: 1
       replicationFactor: 1
-
+    - name: "user-events"
+      partitions: 1
+      replicationFactor: 1
+    - name: "payment-events"
+      partitions: 1
+      replicationFactor: 1
 # Zookeeper configuration
 zookeeper:
   enabled: true
@@ -159,10 +164,10 @@ zookeeper:
   resources:
     limits:
       cpu: 500m
-      memory: 512Mi
+      memory: 256Mi
     requests:
       cpu: 100m
-      memory: 256Mi
+      memory: 128Mi
   persistence:
     enabled: true
     size: 1Gi

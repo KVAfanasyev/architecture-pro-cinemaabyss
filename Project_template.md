@@ -128,6 +128,10 @@ minikube tunnel
 https://cinemaabyss.example.com/api/movies
 и приложите скриншот развертывания helm и вывода https://cinemaabyss.example.com/api/movies
 
+![2025-10-19_20-38-03.png](docs/2025-10-19_20-38-03.png)
+![2025-10-19_20-39-04.png](docs/2025-10-19_20-39-04.png)
+![2025-10-19_20-38-49.png](docs/2025-10-19_20-38-49.png)
+
 
 # Задание 5
 Компания планирует активно развиваться и для повышения надежности, безопасности, реализации сетевых паттернов типа Circuit Breaker и канареечного деплоя вам как архитектору необходимо развернуть istio и настроить circuit breaker для monolith и movies сервисов.
@@ -167,7 +171,7 @@ kubectl exec -n cinemaabyss $FORTIO_POD -c fortio -- fortio load -c 50 -qps 0 -n
 Например,
 
 ```bash
-kubectl exec -n cinemaabyss fortio-deploy-b6757cbbb-7c9qg  -c fortio -- fortio load -c 50 -qps 0 -n 500 -loglevel Warning http://movies-service:8081/api/movies
+kubectl exec -n cinemaabyss fortio-deploy-5c948d95cf-7dkfs  -c fortio -- fortio load -c 50 -qps 0 -n 500 -loglevel Warning http://movies-service:8081/api/movies
 ```
 
 Вывод будет типа такого
@@ -182,7 +186,7 @@ Code 503 : 399 (79.8 %)
 Можно еще проверить статистику
 
 ```bash
-kubectl exec -n cinemaabyss fortio-deploy-b6757cbbb-7c9qg -c istio-proxy -- pilot-agent request GET stats | grep movies-service | grep pending
+kubectl exec -n cinemaabyss fortio-deploy-5c948d95cf-7dkfs -c istio-proxy -- pilot-agent request GET stats | grep movies-service | grep pending
 ```
 
 И там смотрим 
@@ -193,7 +197,9 @@ You can see 21 for the upstream_rq_pending_overflow value which means 21 calls s
 ```
 
 Приложите скриншот работы circuit breaker'а
-
+![2025-10-21_15-54-21.png](docs/2025-10-21_15-54-21.png)
+![2025-10-21_15-57-22.png](docs/2025-10-21_15-57-22.png)
+![2025-10-21_15-55-59.png](docs/2025-10-21_15-55-59.png)
 Удаляем все
 ```bash
 istioctl uninstall --purge
