@@ -1,0 +1,62 @@
+@startuml CinemaAbyss_ToBe_Architecture
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+Person(user, "Пользователь", "Потребитель киноконтента")
+
+System_Boundary(cinemaabyss, "Система Кинобездна") {
+
+    Container(proxy, "Migration Proxy", "Go/Nginx", "Маршрутизация между монолитом и микросервисами\nПлавный переход")
+
+    Container(api_gateway, "API Gateway", "Go", "Единая точка входа, маршрутизация, аутентификация")
+
+    ContainerDb(postgres, "База данных", "PostgreSQL", "Хранение данных всех сервисов")
+
+    Container(movies_service, "Movies Service", "Go", "Управление фильмами и жанрами\nПорт: 8081")
+
+    Container(users_service, "Users Service", "Go", "Управление пользователями\nПорт: 8082")
+
+    Container(payments_service, "Payments Service", "Go", "Обработка платежей\nПорт: 8083")
+
+    Container(subscriptions_service, "Subscriptions Service", "Go", "Управление подписками\nПорт: 8084")
+
+    Container(auth_service, "Auth Service", "Go", "Аутентификация и авторизация\nПорт: 8085")
+
+    Container(kafka, "Message Broker", "Apache Kafka", "Асинхронное взаимодействие сервисов\nСобытийная архитектура")
+
+    Container(legacy_monolith, "Monolith", "Go", "Старый монолит\nПостепенно выводится из эксплуатации\nПорт: 8080")
+}
+
+' External connections
+Rel(user, proxy, "HTTPS REST API", "JSON")
+Rel(proxy, api_gateway, "HTTP", "Запросы к новым сервисам")
+Rel(proxy, legacy_monolith, "HTTP", "Запросы к старому монолиту")
+
+' API Gateway to services
+Rel(api_gateway, movies_service, "HTTP REST", "JSON")
+Rel(api_gateway, users_service, "HTTP REST", "JSON")
+Rel(api_gateway, payments_service, "HTTP REST", "JSON")
+Rel(api_gateway, subscriptions_service, "HTTP REST", "JSON")
+Rel(api_gateway, auth_service, "HTTP REST", "JSON")
+
+' Database connections
+Rel(movies_service, postgres, "SQL", "movies, movie_genres")
+Rel(users_service, postgres, "SQL", "users")
+Rel(payments_service, postgres, "SQL", "payments")
+Rel(subscriptions_service, postgres, "SQL", "subscriptions")
+Rel(auth_service, postgres, "SQL", "users, auth_tokens")
+Rel(legacy_monolith, postgres, "SQL", "Все данные")
+
+' Kafka event-driven communications
+Rel(users_service, kafka, "Publish/Subscribe", "События пользователей")
+Rel(payments_service, kafka, "Publish/Subscribe", "События платежей")
+Rel(subscriptions_service, kafka, "Publish/Subscribe", "События подписок")
+Rel(movies_service, kafka, "Publish/Subscribe", "События фильмов")
+
+' Service to Kafka consumers
+Rel(kafka, users_service, "Events", "Обработка событий")
+Rel(kafka, payments_service, "Events", "Обработка событий")
+Rel(kafka, subscriptions_service, "Events", "Обработка событий")
+Rel(kafka, movies_service, "Events", "Обработка событий")
+
+
+@enduml

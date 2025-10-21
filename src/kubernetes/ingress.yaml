@@ -4,19 +4,46 @@ metadata:
   name: cinemaabyss-ingress
   namespace: cinemaabyss
   annotations:
-    kubernetes.io/ingress.class: "nginx"
     nginx.ingress.kubernetes.io/ssl-redirect: "false"
+    nginx.ingress.kubernetes.io/use-regex: "true"
 spec:
+  ingressClassName: nginx
   rules:
     - host: cinemaabyss.example.com
       http:
         paths:
-          #дополните конфигурацию для /
-          ...
-          - path: /api/events
+          # route for major health checks - Exact имеет высший приоритет
+          - path: /health
+            pathType: Exact
+            backend:
+              service:
+                name: proxy-service
+                port:
+                  number: 8000
+
+          # route for movies - более специфичный путь ДО events
+          - path: /api/movies/health
+            pathType: Exact
+            backend:
+              service:
+                name: movies-service
+                port:
+                  number: 8081
+
+          # route for events
+          - path: /api/events/
             pathType: Prefix
             backend:
               service:
                 name: events-service
                 port:
                   number: 8082
+
+          # route for proxy - ДОЛЖНО БЫТЬ ПОСЛЕДНИМ
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: proxy-service
+                port:
+                  number: 8000
